@@ -163,9 +163,11 @@ class ConnectionWrapper implements NodeConnectionInterface
             return $this->connection->executeCommand($command);
         }
 
+        $this->logger->startProfiling($command);
         $startTime = microtime(true);
         $result = $this->connection->executeCommand($command);
         $duration = (microtime(true) - $startTime) * 1000;
+        $this->logger->stopProfiling();
 
         $error = $result instanceof Error ? (string) $result : false;
         $this->logger->logCommand($this->commandToString($command), $duration, $this->getParameters()->alias, $error);

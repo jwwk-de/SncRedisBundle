@@ -12,25 +12,33 @@
 namespace Snc\RedisBundle\Logger;
 
 use Symfony\Component\HttpKernel\Log\LoggerInterface;
+use Symfony\Component\Stopwatch\Stopwatch;
+use Predis\Command\CommandInterface;
 
 /**
  * RedisLogger
  */
 class RedisLogger
 {
+    const STOPWATCH_CATEGORY = 'redis';
+
     protected $logger;
+    protected $stopwatch;
     protected $nbCommands = 0;
     protected $commands = array();
     protected $start;
+    protected $profiledCommand;
 
     /**
      * Constructor.
      *
      * @param LoggerInterface $logger A LoggerInterface instance
+     * @param Stopwatch $stopwatch A Stopwatch instance
      */
-    public function __construct(LoggerInterface $logger = null)
+    public function __construct(LoggerInterface $logger = null, $stopwatch = null)
     {
         $this->logger = $logger;
+        $this->stopwatch = $stopwatch;
     }
 
     /**
@@ -52,6 +60,27 @@ class RedisLogger
             } else {
                 $this->logger->info('Executing command "' . $command . '"');
             }
+        }
+    }
+
+    /**
+     * Start profiling a new command
+     *
+     * @param CommandInterface $command A CommandInterface instance
+     */
+    public function startProfiling(CommandInterface $command){
+        $this->profiledCommand = $command;
+
+        if ($this->stopwatch) {
+            $this->stopwatch->start($this->profiledCommand->getId(), self::STOPWATCH_CATEGORY);
+        }
+    }
+    /**
+     * Stop the active profiling
+     */
+    public function stopProfiling(){
+        if ($this->stopwatch && $this->profiledCommand) {
+            $this->stopwatch->stop($this->profiledCommand->getId());
         }
     }
 
